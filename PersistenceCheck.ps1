@@ -2,7 +2,7 @@
 .Synopsis
   Queries scheduled task names, executables, and arguments
 #>
-function Get-PersistanceTasks
+function Get-PersistenceTasks
 {
   Get-ScheduledTask | % { [pscustomobject]@{
     Name = $_.TaskName
