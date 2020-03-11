@@ -68,7 +68,7 @@ function Get-IFEO
   else
   {
     Write-Host ""
-    Write-Host "HKLM\Software\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\ not found."
+    Write-Host "[*] HKLM\Software\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\ not found"
     Write-Host ""
   }
 }
