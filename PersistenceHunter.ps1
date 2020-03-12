@@ -116,3 +116,22 @@ function Get-AppShims {
     Write-Output "[*]  HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\ not found"
     Write-Output ""
    }
+
+function Get-BitsPersistence {
+  Write-Output "[*]  Checking for BITS persistence.."
+  Write-Output ""
+  
+  $bitsJobs = Get-BitsTransfer -AllUsers | Select -ExpandProperty JobID
+  $bitsAdmin = bitsadmin /rawreturn /list /verbose /allusers
+  $notficationCmdLine = $bitsAdmin | select-string "NOTIFICATION COMMAND LINE:"
+  
+  foreach ($j in $bitsJobs) {
+    $guid = $bitsAdmin | select-string $j
+    $cmdline = $notificatoinCmdLine[$bitsJobs.IndexOf($j)]
+    
+    if ($cmdLine -notmatch "none$") {
+      Write-Output "Match found with $guid"
+      Write-Output "  $cmdline"
+    }
+  }
+}
