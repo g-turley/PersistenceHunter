@@ -134,4 +134,6 @@ function Get-BitsPersistence {
       Write-Output "  $cmdline"
     }
   }
+  Write-Output ""
+  Write-Output "[*] End of BITS persistence"
 }
