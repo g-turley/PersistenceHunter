@@ -107,15 +107,16 @@ function Get-AppShims {
         }
         Write-Output ""
        }
-      }
-      Write-Output "[*] End of App Shim Check"
-   }
+        Write-Output "[*] End of App Shim Check"
+      } 
    
-   else {
-    Write-Output ""
-    Write-Output "[*]  HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\ not found"
-    Write-Output ""
+    else {
+        Write-Output ""
+        Write-Output "[*]  HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\ not found"
+        Write-Output ""
    }
+  }
+}
 
 function Get-BitsPersistence {
   Write-Output "[*]  Checking for BITS persistence.."
