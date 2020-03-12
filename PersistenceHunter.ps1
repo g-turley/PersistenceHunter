@@ -4,7 +4,7 @@
 #>
 function Get-PersistenceTasks
 {
-  Write-Output [*] Gathering scheduled tasks.."
+  Write-Output "[*] Gathering scheduled tasks.."
   Write-Output ""
   Get-ScheduledTask | % { [pscustomobject]@{
     Name = $_.TaskName
