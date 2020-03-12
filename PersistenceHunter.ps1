@@ -76,7 +76,14 @@ function Get-IFEO
     Write-Output ""
   }
 }
-
+<#
+.Synopsis
+ This function is used to find Shim Databases (SDBs) associated with custom application shims.
+.DESCRIPTION
+ The Get-AppShims function queries the registry for entires in the HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom.
+ It then uses the GUIDs associated with each entry to search the InstalledSDB registry location to find the lcoation of .sdb files that are loaded with an appliction.
+ The .sdb files uncovered can be further examined with tools such as python-sdb to identify any DLLs or other executables that may be loaded with an application.
+ #>
 function Get-AppShims {
   if (Test-Path -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\")
   {
