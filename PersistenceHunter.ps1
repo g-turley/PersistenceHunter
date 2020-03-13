@@ -93,8 +93,7 @@ function Get-AppShims {
     
     $customList = Get-ChildItem -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\"
     
-    if (($customList).count -ge 1) {
-      foreach ($appMatch in $customList) {
+    foreach ($appMatch in $customList) {
         $customPath = $appMatch.PSPath | Out-String | % { $_.split("::")[2] }
         $guid = $appMatch.Property | Out-String | % { $_.split(".sdb")[0] }
         Write-Output "Match found at $customPath"
@@ -106,9 +105,9 @@ function Get-AppShims {
           Write-Output "    Shim database found at $dbPath - Recommend parsing file"
         }
         Write-Output ""
-       }
         Write-Output "[*] End of App Shim Check"
-      } 
+      }
+    }
    
     else {
         Write-Output ""
