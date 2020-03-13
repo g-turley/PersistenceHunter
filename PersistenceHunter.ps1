@@ -36,7 +36,7 @@ function Get-AppShims {
         Write-Output "[*]  HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\ not found"
         Write-Output ""
    }
-  }
+  
 }
 
 #Not Done
