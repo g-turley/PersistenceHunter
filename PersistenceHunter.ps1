@@ -1,126 +1,5 @@
 <#
 .Synopsis
- This function is used to find Shim Databases (SDBs) associated with custom application shims.
-.DESCRIPTION
- The Get-AppShims function queries the registry for entires in the HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom.
- It then uses the GUIDs associated with each entry to search the InstalledSDB registry location to find the lcoation of .sdb files that are loaded with an appliction.
- The .sdb files uncovered can be further examined with tools such as python-sdb to identify any DLLs or other executables that may be loaded with an application.
- #>
-function Get-AppShims {
-  if (Test-Path -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\")
-  {
-    Write-Output ""
-    Write-Output "[*] Checking App Shim keys.."
-    Write-Output ""
-    
-    $customList = Get-ChildItem -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\"
-    
-    foreach ($appMatch in $customList) {
-        $customPath = $appMatch.PSPath | Out-String | % { $_.split("::")[2] }
-        $guid = $appMatch.Property | Out-String | % { $_.split(".sdb")[0] }
-        Write-Output "Match found at $customPath"
-        Write-Output "  Checking for associated SDBs.."
-        if (Test-Path -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\InstalledSDB\$guid")
-        {
-          $item = Get-ItemProperty -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\InstalledSDB\$guid"
-          $dbPath = $item.DatabasePath
-          Write-Output "    Shim database found at $dbPath - Recommend parsing file"
-        }
-        Write-Output ""
-        Write-Output "[*] End of App Shim Check"
-      }
-    }
-   
-    else {
-        Write-Output ""
-        Write-Output "[*]  HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\ not found"
-        Write-Output ""
-   }
-  
-}
-
-#Not Done
-function Get-ChromeExtensions {
-
-    Write-Output ""
-    Write-Output "[*] Checking for Chrome Extensions.."
-    Write-Output ""
-
-    if (Test-Path -Path "Registry::HKLM\Software\Google\Chrome\Extensions\")
-    {
-        $extensionList = Get-ChildItem -Path "Registry::HKLM\Software\Google\Chrome\Extensions\"
-
-        foreach ($e in $extensionList)
-        {
-            $e | Get-ItemProperty | select @{l="RegistryPath"; e={ $_.PSPath | Out-String | % { $_.split("::")[2] } } },Path,Version
-        }
-    }
-
-    if (Test-Path -Path "Registry::HKLM\Software\Wow6432Node\Google\Chrome\Extensions\")
-    {
-        $extensionList = Get-ChildItem -Path "Registry::HKLM\Software\Wow6432Node\Google\Chrome\Extensions\"
-
-        foreach ($e in $extensionList)
-        {
-            $e | Get-ItemProperty | select @{l="RegistryPath"; e={ $_.PSPath | Out-String | % { $_.split("::")[2] } } },Path,Version
-        }
-    }
-
-    Write-Output ""
-    Write-Output "[*] End of Chrome extensions check"
-    Write-Output ""
-}
-
-#Not Done
-function Get-FirefoxExtensions {
-
-    Write-Output ""
-    Write-Output "[*] Checking for Firefox extensions in the registry.."
-    Write-Output ""
-
-    if (Test-Path -Path "Registry::HKLM\Software\WOW6432Node\Mozilla\Firefox\Extensions")
-    {
-        $extension = Get-Item -Path "Registry::HKLM\Software\WOW6432Node\Mozilla\Firefox\Extensions"
-        $value = $extension | Get-ItemProperty | select "{*" | fl | out-string
-        foreach ($v in $value.Trim())
-        {
-            $prop = $v -split ' : '
-            $guid = $prop[0]
-            $path = $prop[1]
-            Write-Output "GUID: $guid"
-            Write-Output "  Path: $path"
-            Write-Output ""
-        }
-    }
-
-    Write-Output "[*] End of Firefox extension registry check"
-    Write-Output ""
-    Write-Output "[*] Checking for Firefox extensions in AppData.."
-    Write-Output ""
-
-    $user = Get-ChildItem -Path "C:\Users" | select -ExpandProperty Name
-    foreach ($u in $user)
-    {
-        if (Test-Path -Path "C:\Users\$u\AppData\Roaming\Mozilla\")
-        {
-            $xpi = Get-ChildItem -Recurse -Force -Path "C:\Users\$u\AppData\Roaming\Mozilla\" | where { $_.Extension -eq ".xpi" }
-            foreach ($x in $xpi) 
-            {
-                $path = $x | Select -ExpandProperty FullName
-                Write-Output "Extension found: $path"
-            }
-            
-            Write-Output ""
-        }
-    }
-
-    Write-Output "[*] End of Firefox extensions in AppData"
-    Write-Output "[*] End of Firefox extensions check"
-    Write-Output ""
-}
-
-<#
-.Synopsis
   Queries scheduled task names, executables, and arguments
 #>
 function Get-PersistenceTasks
@@ -197,6 +76,47 @@ function Get-IFEO
     Write-Output ""
   }
 }
+<#
+.Synopsis
+ This function is used to find Shim Databases (SDBs) associated with custom application shims.
+.DESCRIPTION
+ The Get-AppShims function queries the registry for entires in the HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom.
+ It then uses the GUIDs associated with each entry to search the InstalledSDB registry location to find the lcoation of .sdb files that are loaded with an appliction.
+ The .sdb files uncovered can be further examined with tools such as python-sdb to identify any DLLs or other executables that may be loaded with an application.
+ #>
+function Get-AppShims {
+  if (Test-Path -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\")
+  {
+    Write-Output ""
+    Write-Output "[*] Checking App Shim keys.."
+    Write-Output ""
+    
+    $customList = Get-ChildItem -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\"
+    
+    if (($customList).count -ge 1) {
+      foreach ($appMatch in $customList) {
+        $customPath = $appMatch.PSPath | Out-String | % { $_.split("::")[2] }
+        $guid = $appMatch.Property | Out-String | % { $_.split(".sdb")[0] }
+        Write-Output "Match found at $customPath"
+        Write-Output "  Checking for associated SDBs.."
+        if (Test-Path -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\InstalledSDB\$guid")
+        {
+          $item = Get-ItemProperty -Path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\InstalledSDB\$guid"
+          $dbPath = $item.DatabasePath
+          Write-Output "    Shim database found at $dbPath - Recommend parsing file"
+        }
+        Write-Output ""
+       }
+        Write-Output "[*] End of App Shim Check"
+      } 
+   
+    else {
+        Write-Output ""
+        Write-Output "[*]  HKLM\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom\ not found"
+        Write-Output ""
+   }
+  }
+}
 
 function Get-BitsPersistence {
   Write-Output "[*]  Checking for BITS persistence.."
@@ -217,4 +137,40 @@ function Get-BitsPersistence {
   }
   Write-Output ""
   Write-Output "[*] End of BITS persistence"
+}
+
+
+function Get-AppInitDLLs {
+
+    if (((Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" | select -expandproperty LoadAppInit_DLLs) -eq "1") -or (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows" | select -ExpandProperty LoadAppInit_DLLs) -eq "1")
+    { 
+        Write-Output ""
+        Write-Output "[*] AppInit DLLs are configured to load. Checking AppInit DLL keys.."
+    }
+
+    else {
+        Write-Output ""
+        Write-Output "[*] AppInit DLLs aren't configured to load. That's good. Checking AppInit DLL keys anyway.."
+    }
+    
+    $dllList = New-Object -TypeName "System.Collections.Arraylist" 
+    $firstCheck = Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" | select -expandproperty AppInit_DLLs
+    $secondCheck = Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Windows" | select -expandproperty AppInit_DLLs
+    [void]$dllList.add($firstCheck)
+    [void]$dllList.Add($secondCheck)
+    
+    if ($dllList.Count -ge 1) 
+    {
+        Write-Output "  DLLs loaded:"
+        foreach ($dll in $dllList) {
+            Write-Output "    $dll"
+        } 
+    }
+
+    else
+    {
+        Write-Output "[*] No DLLs were found."
+    }
+
+    Write-Output "[*] End of AppInit DLL check"
 }
