@@ -8,13 +8,13 @@ PS> Import-Module ./PersistenceHunter.ps1
 ```
 
 ## Covered Techniques
-+ Chrome Extensions
-+ Firefox Extensions
 + AppCert DLLs
 + AppInit DLLs
-+ Authentication Packages (LSA)
 + Application Shimming
++ Authentication Packages (LSA)
 + BITS Jobs
++ Chrome Extensions
++ Firefox Extensions
 + Image File Execution Options
 + Scheduled Tasks
 
