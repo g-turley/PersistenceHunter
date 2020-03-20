@@ -1,6 +1,6 @@
 # PersistenceHunter
 
-This tool is an effort to automate checking many of the common registry and filepath locations associated with Windows persistence mechanisms identified in the MITRE ATT&CK Matrix. It has been designed with the presumption that no foreign executables may be brought into the environment. It also assumes there is little to none historical data, providing a point in time analysis.
+This tool is an effort to automate checking many of the common registry and filepath locations associated with Windows persistence mechanisms identified in the MITRE ATT&CK Matrix. It has been designed with the presumption that no foreign executables (i.e. Autoruns.exe) may be brought into the environment. It also assumes there is little to none historical data, providing a point in time analysis.
 
 ## Usage
 ```powershell
