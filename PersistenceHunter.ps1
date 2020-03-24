@@ -108,7 +108,7 @@ function Get-AppShims {
  This function gathers data from Get-BitsTransfers for all users and matches the jobs based on GUID against output of the bitsadmin binary to match command line arguments to a GUID that could be evident of T1197.
 #>
 function Get-BitsPersistence {
-    
+#Currently buggy depending on PowerShell version
     Write-Output "[*]  Checking for BITS persistence.."
   
     $bitsJobs = Get-BitsTransfer -AllUsers | Select -ExpandProperty JobID
@@ -389,14 +389,35 @@ function Get-AuthenticationPackages {
 
 }
 
-function Get-AllPersistence {
-    Get-AuthenticationPackages
-    Get-SSPs
-    Get-FirefoxExtensions
-    Get-ChromeExtensions
-    Get-BitsPersistence
-    Get-IFEO
-    Get-AppShims
-    Get-AppInitDLLs
-    Get-PersistenceTasks
+<#
+.Synopsis
+  Queries all HKCUs for Logon Scripts
+.DESCRIPTION
+  This function gathers UserInitMprLogonScript values across all HKCUs to assist in the identification of T1037 - Logon Scripts.
+#>
+function Get-LogonScripts {
+
+    Write-Output "[*] Gathering Logon Scripts for all users.."
+    Write-Output ""
+ 
+    $HKCUList = Get-ChildItem -recurse -depth 0 "Registry::HKU" | select -expandproperty Name
+
+    foreach ($h in $HKCUList) 
+    {
+        if (Test-Path -Path "Registry::$h\Environment")
+        {
+            $logonScript = Get-ItemProperty -Path "Registry::$h\Environment" | select -expandproperty UserInitMprLogonScript -ErrorAction SilentlyContinue
+            if ($logonScript -ne $null)
+            {
+                $user = $h
+                Write-Output "  User $h is set to run $logonscript at login"
+                Write-Output "    Path to key: $h\Environment\UserInitMprLogonScript"
+            }
+        }           
+    }
+
+    Write-Output ""
+
+    Write-Output "[*] End of Logon Scripts check"
+
 }
