@@ -1,6 +1,6 @@
 <#
 .Synopsis
-  Queries scheduled task names, executables, and arguments
+  Queries LSA SSPs in the registry
 .DESCRIPTION
   This function gathers Security Support Provider (SSP) DLLs loaded by LSA upon startup to assist in the identification of T1101 - Security Support Providers.
 #>
@@ -19,14 +19,21 @@ function Get-SSPs {
 
             if ($dll -ne '""')
             {
-                if ($dll -eq "mimilib.dll")
+                if ($dll -eq "mimilib")
                 {
                     Write-Output "  $dll <-- Almost certainly bad"
                 }
 
                 else 
                 {
-                    Write-Output "  $dll"
+                    if (Test-Path -Path C:\windows\system32\$dll.dll) {
+                        $signer = Get-AuthenticodeSignature -FilePath "C:\windows\system32\$dll.dll" | select -expandproperty signercertificate | select -expandproperty DnsNameList
+                        Write-Output "  $dll - Signed by $signer"
+                    }
+
+                    else {
+                        Write-Output "    $dll is present in SSPs but not found in C:\Wiindows\System32\"
+                    }
                 }
             }
         }
@@ -41,6 +48,49 @@ function Get-SSPs {
     }
 
     Write-Output "[*] End of SSP check"
+
+}
+
+<#
+.Synopsis
+  Queries LSA Authentication Packages in the registry
+.DESCRIPTION
+  This function gathers Authentication Package DLLs and the associated signatures loaded by LSA upon startup to assist in the identification of T1131 - Authentication Package.
+#>
+function Get-AuthenticationPackages {
+
+    Write-Output "[*] Gathering LSA Authentication Packages.."
+    Write-Output ""
+ 
+    $dllList = Get-ItemProperty -Path "Registry::hklm\System\CurrentControlSet\Control\Lsa\" | select -expandproperty "Authentication Packages"
+
+    if ($dllList.count -ge 1) 
+    {
+    
+        foreach ($dll in $dllList) 
+        {
+            if (Test-Path -Path C:\windows\system32\$dll.dll) 
+            {
+                $signer = Get-AuthenticodeSignature -FilePath "C:\windows\system32\$dll.dll" | select -expandproperty signercertificate | select -expandproperty DnsNameList
+                Write-Output "  $dll - Signed by $signer"
+            }
+
+            else 
+            {
+                Write-Output "    $dll is present in Authentication Packages but not found in C:\Wiindows\System32\"
+            }                        
+        }
+
+        Write-Output ""
+    }
+
+    else
+    {
+        Write-Output "[*] No DLLs were found."
+        Write-Output ""
+    }
+
+    Write-Output "[*] End of Authentication Package check"
 
 }
 
