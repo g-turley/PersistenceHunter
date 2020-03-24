@@ -1,98 +1,5 @@
 <#
 .Synopsis
-  Queries LSA SSPs in the registry
-.DESCRIPTION
-  This function gathers Security Support Provider (SSP) DLLs loaded by LSA upon startup to assist in the identification of T1101 - Security Support Providers.
-#>
-function Get-SSPs {
-
-    Write-Output "[*] Gathering Security Support Providers (SSPs).."
-    Write-Output ""
- 
-    $dllList = Get-ItemProperty -Path "Registry::hklm\System\CurrentControlSet\Control\Lsa\" | select -expandproperty "Security Packages"
-
-    if ($dllList.count -ge 1) 
-    {
-        foreach ($dll in $dllList) 
-        {
-            if ($dll -ne '""')
-            {
-                if ($dll -eq "mimilib")
-                {
-                    Write-Output "  $dll <-- Almost certainly bad"
-                }
-
-                else 
-                {
-                    if (Test-Path -Path C:\windows\system32\$dll.dll) {
-                        $signer = Get-AuthenticodeSignature -FilePath "C:\windows\system32\$dll.dll" | select -expandproperty signercertificate | select -expandproperty DnsNameList
-                        Write-Output "  $dll - Signed by $signer"
-                    }
-
-                    else {
-                        Write-Output "    $dll is present in SSPs but not found in C:\Wiindows\System32\"
-                    }
-                }
-            }
-        }
-
-        Write-Output ""
-    }
-
-    else
-    {
-        Write-Output "[*] No DLLs were found."
-        Write-Output ""
-    }
-
-    Write-Output "[*] End of SSP check"
-
-}
-
-<#
-.Synopsis
-  Queries LSA Authentication Packages in the registry
-.DESCRIPTION
-  This function gathers Authentication Package DLLs and the associated signatures loaded by LSA upon startup to assist in the identification of T1131 - Authentication Package.
-#>
-function Get-AuthenticationPackages {
-
-    Write-Output "[*] Gathering LSA Authentication Packages.."
-    Write-Output ""
- 
-    $dllList = Get-ItemProperty -Path "Registry::hklm\System\CurrentControlSet\Control\Lsa\" | select -expandproperty "Authentication Packages"
-
-    if ($dllList.count -ge 1) 
-    {
-        foreach ($dll in $dllList) 
-        {
-            if (Test-Path -Path C:\windows\system32\$dll.dll) 
-            {
-                $signer = Get-AuthenticodeSignature -FilePath "C:\windows\system32\$dll.dll" | select -expandproperty signercertificate | select -expandproperty DnsNameList
-                Write-Output "  $dll - Signed by $signer"
-            }
-
-            else 
-            {
-                Write-Output "    $dll is present in Authentication Packages but not found in C:\Wiindows\System32\"
-            }                        
-        }
-
-        Write-Output ""
-    }
-
-    else
-    {
-        Write-Output "[*] No DLLs were found."
-        Write-Output ""
-    }
-
-    Write-Output "[*] End of Authentication Package check"
-
-}
-
-<#
-.Synopsis
  Queries registry locations associated with IFEO persistence
 .DESCRIPTION
  This function gathers registry values and checks for the existence of keys that are typically not present and that are requirements of the T1183 - Image File Execution Options.
@@ -278,35 +185,6 @@ function Get-AppInitDLLs {
 
 <#
 .Synopsis
- Queries the registry for modifications to LSA Authenication Packages
-.DESCRIPTION
- This function gathers data from the registry to identify any changes to the Authenication Packages value in the HKLM\System\CurrentControlSet\Control\LSA key that would enable the employment of T1131 - Authentication Packages.
-#>
-function Get-AuthenticationPackages {
-    
-    $Path = "Registry::HKLM\SYSTEM\CurrentControlSet\Control\Lsa"
-
-    Write-Output "[*] Checking for LSA Authentication Packages.."
-    if ((Get-ItemProperty -Path $Path | select -expandproperty "Authentication Packages") -eq "msv1_0")
-    { 
-        Write-Output ""
-        Write-Output "[*] No modifications detected in LSA Authentication Packages"
-    }
-
-    else {
-        
-        $value = Get-ItemProperty -Path $Path | select -ExpandProperty "Authentication Packages"
-        
-        Write-Output ""
-        Write-Output "[*] Non-standard value found: $value"
-    }
-
-    Write-Output ""
-    Write-Output "[*] End of LSA Authentication Packages check"
-}
-
-<#
-.Synopsis
  Queries registry for Chrome Extensions
 .DESCRIPTION
  This function gathers data from several registry locations and the filesystem to identify any .xpi files that could be used to employ T1176 - Browser Extensions. NOTE: The detection of any extension does not indicate malicious code. This function simply provides situational awareness.
@@ -363,8 +241,8 @@ function Get-FirefoxExtensions {
                 $prop = $v -split ' : '
                 $guid = $prop[0]
                 $path = $prop[1]
-                Write-Output "GUID: $guid"
-                Write-Output "  Path: $path"
+                Write-Output "  GUID: $guid"
+                Write-Output "    Path: $path"
                 Write-Output ""
             }
         }
@@ -384,7 +262,7 @@ function Get-FirefoxExtensions {
             foreach ($x in $xpi) 
             {
                 $path = $x | Select -ExpandProperty FullName
-                Write-Output "Extension found: $path"
+                Write-Output "  Extension found: $path"
             }
             
             Write-Output ""
@@ -413,4 +291,112 @@ function Get-PersistenceTasks
   }
   Write-Output ""
   Write-Output "[*] End of scheduled tasks"
+}
+
+<#
+.Synopsis
+  Queries scheduled task names, executables, and arguments
+.DESCRIPTION
+  This function gathers Security Support Provider (SSP) DLLs loaded by LSA upon startup to assist in the identification of T1101 - Security Support Providers.
+#>
+function Get-SSPs {
+
+    Write-Output "[*] Gathering Security Support Providers (SSPs).."
+    Write-Output ""
+ 
+    $dllList = Get-ItemProperty -Path "Registry::hklm\System\CurrentControlSet\Control\Lsa\" | select -expandproperty "Security Packages"
+
+    if ($dllList.count -ge 1) 
+    {
+    
+        foreach ($dll in $dllList) 
+        {
+
+            if ($dll -ne '""')
+            {
+                if ($dll -eq "mimilib")
+                {
+                    Write-Output "  $dll <-- Almost certainly bad"
+                }
+
+                else 
+                {
+                    if (Test-Path -Path C:\windows\system32\$dll.dll) {
+                        $signer = Get-AuthenticodeSignature -FilePath "C:\windows\system32\$dll.dll" | select -expandproperty signercertificate | select -expandproperty DnsNameList
+                        Write-Output "  $dll - Signed by $signer"
+                    }
+
+                    else {
+                        Write-Output "    $dll is present in SSPs but not found in C:\Wiindows\System32\"
+                    }
+                }
+            }
+        }
+
+        Write-Output ""
+    }
+
+    else
+    {
+        Write-Output "[*] No DLLs were found."
+        Write-Output ""
+    }
+
+    Write-Output "[*] End of SSP check"
+
+}
+
+<#
+.Synopsis
+  Queries scheduled task names, executables, and arguments
+.DESCRIPTION
+  This function gathers Authentication Package DLLs and the associated signatures loaded by LSA upon startup to assist in the identification of T1131 - Authentication Package.
+#>
+function Get-AuthenticationPackages {
+
+    Write-Output "[*] Gathering LSA Authentication Packages.."
+    Write-Output ""
+ 
+    $dllList = Get-ItemProperty -Path "Registry::hklm\System\CurrentControlSet\Control\Lsa\" | select -expandproperty "Authentication Packages"
+
+    if ($dllList.count -ge 1) 
+    {
+    
+        foreach ($dll in $dllList) 
+        {
+            if (Test-Path -Path C:\windows\system32\$dll.dll) 
+            {
+                $signer = Get-AuthenticodeSignature -FilePath "C:\windows\system32\$dll.dll" | select -expandproperty signercertificate | select -expandproperty DnsNameList
+                Write-Output "  $dll - Signed by $signer"
+            }
+
+            else 
+            {
+                Write-Output "    $dll is present in Authentication Packages but not found in C:\Wiindows\System32\"
+            }                        
+        }
+
+        Write-Output ""
+    }
+
+    else
+    {
+        Write-Output "[*] No DLLs were found."
+        Write-Output ""
+    }
+
+    Write-Output "[*] End of Authentication Package check"
+
+}
+
+function Get-AllPersistence {
+    Get-AuthenticationPackages
+    Get-SSPs
+    Get-FirefoxExtensions
+    Get-ChromeExtensions
+    Get-BitsPersistence
+    Get-IFEO
+    Get-AppShims
+    Get-AppInitDLLs
+    Get-PersistenceTasks
 }
