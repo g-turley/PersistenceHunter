@@ -283,13 +283,26 @@ function Get-PersistenceTasks
 {
   Write-Output "[*] Gathering scheduled tasks.."
   Write-Output ""
-  Get-ScheduledTask | % { [pscustomobject]@{
-    Name = $_.TaskName
-    Binary = $_.Actions.Execute
-    Arguments = $_.Actions.Arguments
+  $schTasks = Get-ScheduledTask | % { [pscustomobject]@{
+    Name = $_.TaskName | Out-String
+    Binary = $_.Actions.Execute | Out-String
+    Arguments = $_.Actions.Arguments | Out-String
     }
   }
-  Write-Output ""
+  
+  foreach ($s in $schTasks) {
+
+    $name = $s.Name.Trim()
+    $binary = $s.Binary.Trim()
+    $args = $s.Arguments.Trim()
+
+    if ($binary -ne "")
+    {   
+        Write-Output "  Task Name: $name"
+        Write-Output "    Execution String: $binary $args"
+        Write-Output ""
+    }
+  }
   Write-Output "[*] End of scheduled tasks"
 }
 
