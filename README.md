@@ -16,6 +16,7 @@ PS> Import-Module ./PersistenceHunter.ps1
 + Chrome Extensions
 + Firefox Extensions
 + Image File Execution Options
++ Logon Scripts
 + Scheduled Tasks
 + Security Support Providers
 
@@ -31,7 +32,6 @@ PS> Import-Module ./PersistenceHunter.ps1
 + Hidden Files and Directories
 + Hooking
 + Hypervisor
-+ Logon Scripts
 + LSASS Driver
 + Modifying Existing Service
 + Netsh Helper DLL
