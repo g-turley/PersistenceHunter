@@ -17,6 +17,7 @@ PS> Import-Module ./PersistenceHunter.ps1
 + Firefox Extensions
 + Image File Execution Options
 + Scheduled Tasks
++ Security Support Providers
 
 ## To-do 
 ##### Some of these won't be able to be done with PowerShell
@@ -42,7 +43,6 @@ PS> Import-Module ./PersistenceHunter.ps1
 + Redundant Access
 + Registry Run Keys / Startup Folder
 + Screensaver
-+ Security Support Provider
 + Server Software Component
 + Service Registry Permissions Weakness
 + Shortcut Modification
