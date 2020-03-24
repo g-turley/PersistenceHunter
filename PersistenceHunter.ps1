@@ -13,10 +13,8 @@ function Get-SSPs {
 
     if ($dllList.count -ge 1) 
     {
-    
         foreach ($dll in $dllList) 
         {
-
             if ($dll -ne '""')
             {
                 if ($dll -eq "mimilib")
@@ -66,7 +64,6 @@ function Get-AuthenticationPackages {
 
     if ($dllList.count -ge 1) 
     {
-    
         foreach ($dll in $dllList) 
         {
             if (Test-Path -Path C:\windows\system32\$dll.dll) 
