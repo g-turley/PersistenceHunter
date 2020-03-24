@@ -421,3 +421,35 @@ function Get-LogonScripts {
     Write-Output "[*] End of Logon Scripts check"
 
 }
+
+<#
+.Synopsis
+  Queries all user directories for hidden files
+.DESCRIPTION
+  This function identifies all hidden files of specific file types, namely file types that can be executed, as well as file types that are common in phishing, to assist in the identification of T1158 - Hidden Files and Directories.
+#>
+function Get-HiddenFiles {
+
+    Write-Output "[*] Checking for hidden files in user directories.."
+    Write-Output ""
+
+    $hidables = @(".APPLICATION", ".BAT", ".BIN", ".CMD", ".COM", ".CPL", ".DLL", ".DOC", ".DOCM", ".DOT", ".DOTM", ".DOCX", ".EXE", ".GADGET", 
+                    ".HTA", ".HTM", ".HTML", ".INF1", ".INS", ".INX", ".ISU", ".JAR", ".JOB", ".JS", ".JSE", ".LNK", ".MSC", ".MSH", ".MSH1", ".MSH2", 
+                    ".MSHXML", ".MSH1XML", ".MSH2XML", ".MSI", ".MSP", ".MST", ".ODT", ".PAF", ".PDF", ".PIF", ".PPTM", ".POTM", ".PPAM", ".PPSM", ".PPTX", 
+                    ".PS1", ".PS1M", ".PS1XML", ".PS2", ".PS2XML", ".PSC1", ".PSC2", ".REG", ".RGS", ".SCR", ".SCT", ".SHB", ".SHS", ".SLDM", ".U3P", ".VB", 
+                    ".VBE", ".VBS", ".VBSCRIPT", ".WS", ".WSF", ".WSH", ".XLS", ".XLSM", ".XLTM", ".XLAM", ".ZIP")
+    $user = Get-ChildItem -Path "C:\Users" | select -ExpandProperty Name 
+    foreach ($u in $user)
+    {
+        $file = Get-ChildItem -File -Hidden -Recurse -Path "C:\users\$u" -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in $hidables } | Select -ExpandProperty FullName
+
+        foreach ($f in $file)
+        {
+            Write-Output "  $f"
+        }
+    }
+
+    Write-Output ""
+    Write-Output "[*] End of hidden files check"
+
+}
