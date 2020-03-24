@@ -1,5 +1,51 @@
 <#
 .Synopsis
+  Queries scheduled task names, executables, and arguments
+.DESCRIPTION
+  This function gathers Security Support Provider (SSP) DLLs loaded by LSA upon startup to assist in the identification of T1101 - Security Support Providers.
+#>
+function Get-SSPs {
+
+    Write-Output "[*] Gathering Security Support Providers (SSPs).."
+    Write-Output ""
+ 
+    $dllList = Get-ItemProperty -Path "Registry::hklm\System\CurrentControlSet\Control\Lsa\" | select -expandproperty "Security Packages"
+
+    if ($dllList.count -ge 1) 
+    {
+    
+        foreach ($dll in $dllList) 
+        {
+
+            if ($dll -ne '""')
+            {
+                if ($dll -eq "mimilib.dll")
+                {
+                    Write-Output "  $dll <-- Almost certainly bad"
+                }
+
+                else 
+                {
+                    Write-Output "  $dll"
+                }
+            }
+        }
+
+        Write-Output ""
+    }
+
+    else
+    {
+        Write-Output "[*] No DLLs were found."
+        Write-Output ""
+    }
+
+    Write-Output "[*] End of SSP check"
+
+}
+
+<#
+.Synopsis
  Queries registry locations associated with IFEO persistence
 .DESCRIPTION
  This function gathers registry values and checks for the existence of keys that are typically not present and that are requirements of the T1183 - Image File Execution Options.
