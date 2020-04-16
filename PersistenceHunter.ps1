@@ -4,8 +4,7 @@
 .DESCRIPTION
  This function gathers registry values and checks for the existence of keys that are typically not present and that are requirements of the T1183 - Image File Execution Options.
 #>
-function Get-IFEO
-{
+function Get-IFEO {
   if (Test-Path -path "Registry::HKLM\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\")
   {
     Write-Output "[*] Checking Image Execution File Option keys.."
@@ -279,8 +278,7 @@ function Get-FirefoxExtensions {
 .DESCRIPTION
   This function gathers scheduled tasks along with the binaries and command line arguments assocaited with them to assist in the identification of T1053 - Scheduled Tasks.
 #>
-function Get-PersistenceTasks
-{
+function Get-PersistenceTasks {
   Write-Output "[*] Gathering scheduled tasks.."
   Write-Output ""
   $schTasks = Get-ScheduledTask | % { [pscustomobject]@{
@@ -445,8 +443,8 @@ function Get-HiddenFiles {
 
     Write-Output "[*] Checking for hidden files in user directories.."
     Write-Output ""
-
-    $hidables = @(".APPLICATION", ".BAT", ".BIN", ".CMD", ".COM", ".CPL", ".DLL", ".DOC", ".DOCM", ".DOT", ".DOTM", ".DOCX", ".EXE", ".GADGET", 
+   
+    $hidables = @(".APPLICATION", ".BAT", ".BIN", ".CAB", ".CMD", ".COM", ".CPL", ".DLL", ".DOC", ".DOCM", ".DOT", ".DOTM", ".DOCX", ".EXE", ".GADGET", 
                     ".HTA", ".HTM", ".HTML", ".INF1", ".INS", ".INX", ".ISU", ".JAR", ".JOB", ".JS", ".JSE", ".LNK", ".MSC", ".MSH", ".MSH1", ".MSH2", 
                     ".MSHXML", ".MSH1XML", ".MSH2XML", ".MSI", ".MSP", ".MST", ".ODT", ".PAF", ".PDF", ".PIF", ".PPTM", ".POTM", ".PPAM", ".PPSM", ".PPTX", 
                     ".PS1", ".PS1M", ".PS1XML", ".PS2", ".PS2XML", ".PSC1", ".PSC2", ".REG", ".RGS", ".SCR", ".SCT", ".SHB", ".SHS", ".SLDM", ".U3P", ".VB", 
@@ -465,4 +463,99 @@ function Get-HiddenFiles {
     Write-Output ""
     Write-Output "[*] End of hidden files check"
 
+}
+
+
+function Get-OfficePersistence {
+#Todo: Scan for macro files
+
+    Write-Output "[*] Checking for Microsoft Office based persistence.."
+    Write-Output ""
+ 
+    $HKCUList = Get-ChildItem -recurse -depth 0 "Registry::HKU" | select -expandproperty Name
+
+    foreach ($h in $HKCUList) 
+    {
+        if (Test-Path -Path "Registry::$h\Software\Microsoft\Office test\Special\Perf") #APT28
+        {
+            Write-Output "    Found non-standard key at: $h\Software\Microsoft\Office test\Special\Perf"
+        }
+    }
+
+    Write-Output ""
+    Write-Output "[*] End of Microsoft Office persistence check"
+}
+
+<#
+.Synopsis
+  Checks for unsigned DLLs and descriptionless services
+.DESCRIPTION
+  Persistence via Services can launch DLLs in place of executables. This function goes through services and identifies those that launch unsigned DLLs (code derived from: https://github.com/gtworek/PSBits/blob/master/Services/Get-ServiceDlls.ps1). Additionally, it searches for descriptionless services as most legitimate services provide a description.
+#>
+function Get-ServicePersistence { 
+
+    Write-Output "[*] Checking for unsigned service DLLs.."
+    Write-Output ""
+
+    $keys = Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Services\"
+
+    foreach ($key in $keys)
+    {
+        if (Test-Path ($key.pspath+"\Parameters"))
+        {
+            $ServiceDll = (Get-ItemProperty ($key.pspath+"\Parameters")).ServiceDll
+            if ($ServiceDll -ne $null)
+            {
+                if ((Get-AuthenticodeSignature $ServiceDll).Status.value__ -ne 0) 
+                {
+                    Write-Output "    Unsigned DLL found at $ServiceDll"
+                    $hash = (Get-FileHash -Algorithm md5 -Path $ServiceDll).Hash
+                    Write-Output  "        MD5: $hash"
+                }
+            }
+
+        }
+    }
+
+    Write-Output ""
+    Write-Output "[*] End of unsigned service DLL check"
+    Write-Output ""
+
+    Write-Output "[*] Checking for description-less services.."
+    Write-Output ""
+
+    $nondescriptService = Get-WmiObject win32_service | where-object {$_.description -eq $null}
+
+    foreach ($s in $nondescriptService)
+    {
+        $pathname = $s.PathName
+        $pathname = $pathname -replace '"',''
+        Write-Output "    $pathname"
+        $hash = (Get-Filehash -Algorithm MD5 -LiteralPath $pathname -ErrorAction SilentlyContinue).Hash 
+        Write-Output "        MD5: $hash"
+    }
+
+    Write-Output ""
+    Write-Output "[*] End of unsigned service DLL check"
+}
+
+function Get-Exes {
+
+    Write-Output "[*] Getting a list of all the EXEs, the path, and the MD5. Take 5, this will take a minute.."
+    Write-Output ""
+    
+    $exes = Get-ChildItem -Recurse -File -Path C:\ -Force -Include "*.exe" -ErrorAction SilentlyContinue | Select FullName,Name
+    foreach ($e in $exes)
+    {
+        $name = $e.Name
+        $fullpath = $e.FullName
+        $hash = (Get-FileHash -Algorithm MD5 -Path $fullpath).Hash
+
+        Write-Output "    File Name: $name"
+        Write-Output "        File Path: $fullpath"
+        Write-Output "        MD5: $hash"
+    }
+
+    Write-Output ""
+    Write-Output "[*] End of EXE check"
 }
