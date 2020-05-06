@@ -465,6 +465,29 @@ function Get-HiddenFiles {
 
 }
 
+<#
+.Synopsis
+  Queries all user directories for hidden folders
+.DESCRIPTION
+  This function identifies all hidden folders to assist in identification of T1158 - Hidden Files and Directories.
+#>
+function Get-HiddenDirectories {
+
+    Write-Output "[*] Checking for hidden directories in user directories.."
+    Write-Output ""
+   
+    $file = Get-ChildItem -Directory -Hidden -Recurse -Path "C:\users" -ErrorAction SilentlyContinue | Select -ExpandProperty FullName
+
+    foreach ($f in $file)
+    {
+        Write-Output "  $f"
+    }
+
+    Write-Output ""
+    Write-Output "[*] End of hidden directory check ($($file.Length) Found)"
+
+}
+
 
 function Get-OfficePersistence {
 #Todo: Scan for macro files

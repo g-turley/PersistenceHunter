@@ -16,6 +16,7 @@ PS> Import-Module ./PersistenceHunter.ps1
 + Chrome Extensions
 + Firefox Extensions
 + Hidden Files
++ Hidden Directories
 + Image File Execution Options
 + Logon Scripts
 + Scheduled Tasks
@@ -30,7 +31,6 @@ PS> Import-Module ./PersistenceHunter.ps1
 + DLL Search Order Hijacking
 + External Remote Services
 + File System Permissions Weakness
-+ Hidden Directories
 + Hooking
 + Hypervisor
 + LSASS Driver
