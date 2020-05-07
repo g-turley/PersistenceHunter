@@ -582,3 +582,141 @@ function Get-Exes {
     Write-Output ""
     Write-Output "[*] End of EXE check"
 }
+
+<#
+.Synopsis
+  Provides sorted LastWriteTime of specific registry keys to help identify SIP and Trust Provider Hijacking
+.DESCRIPTION
+  SIP and Trust Providers offer an interface between APIs and files. This detects direct registry changes by adversaries to mislead the OS into whitelisting malicious tools (T1198 - SIP and Trust Provider Hijacking).
+  If certain registry values are changed recently it may indicate hijacking. Items which have been written in order of suspicion.
+#>
+function Get-TrustProviderHijacking { 
+
+    Write-Output "[*] Checking for SIP and Trust Provider Hijacking.."
+    Write-Output ""
+
+    foreach ($potentiallocation in @("HKLM:\SOFTWARE\Microsoft\Cryptography\OID\", "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Cryptography\OID", "HKLM:\SOFTWARE\Microsoft\Cryptography\Providers\Trust", "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Cryptography\Providers\Trust"))
+    {
+        $encodingtype = Get-ChildItem $potentiallocation -Recurse
+        $out = foreach ($type in $encodingtype)
+        {
+            if($type.GetType().Name -eq "RegistryKey"){
+                if($type.Property -ne ""){
+                    # $path = "HKLM:\SOFTWARE\Microsoft\Cryptography\OID\EncodingType 0\CryptSIPDllVerifyIndirectData\{603BCC1F-4B59-4E08-B724-D2C6297EF351}"
+                    [Microsoft.Win32.RegistryKey]$RegistryKey = Get-Item $type.PSPath
+
+                    # This chunk extracts the LastWriteTime of a registry key.
+
+                    #region Create Win32 API Object
+                    Try {
+                        [void][advapi32]
+                    } Catch {
+                        #region Module Builder
+                        $Domain = [AppDomain]::CurrentDomain
+                        $DynAssembly = New-Object System.Reflection.AssemblyName('RegAssembly')
+                        $AssemblyBuilder = $Domain.DefineDynamicAssembly($DynAssembly, [System.Reflection.Emit.AssemblyBuilderAccess]::Run) # Only run in memory
+                        $ModuleBuilder = $AssemblyBuilder.DefineDynamicModule('RegistryTimeStampModule', $False)
+                        #endregion Module Builder
+ 
+                        #region DllImport
+                        $TypeBuilder = $ModuleBuilder.DefineType('advapi32', 'Public, Class')
+ 
+                        #region RegQueryInfoKey Method
+                        $PInvokeMethod = $TypeBuilder.DefineMethod(
+                            'RegQueryInfoKey', #Method Name
+                            [Reflection.MethodAttributes] 'PrivateScope, Public, Static, HideBySig, PinvokeImpl', #Method Attributes
+                            [IntPtr], #Method Return Type
+                            [Type[]] @(
+                                [Microsoft.Win32.SafeHandles.SafeRegistryHandle], #Registry Handle
+                                [System.Text.StringBuilder], #Class Name
+                                [UInt32 ].MakeByRefType(),  #Class Length
+                                [UInt32], #Reserved
+                                [UInt32 ].MakeByRefType(), #Subkey Count
+                                [UInt32 ].MakeByRefType(), #Max Subkey Name Length
+                                [UInt32 ].MakeByRefType(), #Max Class Length
+                                [UInt32 ].MakeByRefType(), #Value Count
+                                [UInt32 ].MakeByRefType(), #Max Value Name Length
+                                [UInt32 ].MakeByRefType(), #Max Value Name Length
+                                [UInt32 ].MakeByRefType(), #Security Descriptor Size           
+                                [long].MakeByRefType() #LastWriteTime
+                            ) #Method Parameters
+                        )
+ 
+                        $DllImportConstructor = [Runtime.InteropServices.DllImportAttribute].GetConstructor(@([String]))
+                        $FieldArray = [Reflection.FieldInfo[]] @(       
+                            [Runtime.InteropServices.DllImportAttribute].GetField('EntryPoint'),
+                            [Runtime.InteropServices.DllImportAttribute].GetField('SetLastError')
+                        )
+ 
+                        $FieldValueArray = [Object[]] @(
+                            'RegQueryInfoKey', #CASE SENSITIVE!!
+                            $True
+                        )
+ 
+                        $SetLastErrorCustomAttribute = New-Object Reflection.Emit.CustomAttributeBuilder(
+                            $DllImportConstructor,
+                            @('advapi32.dll'),
+                            $FieldArray,
+                            $FieldValueArray
+                        )
+ 
+                        $PInvokeMethod.SetCustomAttribute($SetLastErrorCustomAttribute)
+                        #endregion RegQueryInfoKey Method
+ 
+                        [void]$TypeBuilder.CreateType()
+                        #endregion DllImport
+                    }
+                    #endregion Create Win32 API object
+                                #region Constant Variables
+                $ClassLength = 255
+                [long]$TimeStamp = $null
+                #endregion Constant Variables
+ 
+                    $ClassName = New-Object System.Text.StringBuilder $RegistryKey.Name
+                    $RegistryHandle = $RegistryKey.Handle
+                    #endregion Registry Key Data
+
+                    #region Retrieve timestamp
+                    $Return = [advapi32]::RegQueryInfoKey(
+                    $RegistryHandle,
+                    $ClassName,
+                    [ref]$ClassLength,
+                    $Null,
+                    [ref]$Null,
+                    [ref]$Null,
+                    [ref]$Null,
+                    [ref]$Null,
+                    [ref]$Null,
+                    [ref]$Null,
+                    [ref]$Null,
+                    [ref]$TimeStamp
+                    )
+                    Switch ($Return) {
+                        0 {
+                            #Convert High/Low date to DateTime Object
+                            $LastWriteTime = [datetime]::FromFileTime($TimeStamp)
+ 
+                            #Return object
+                            $Object = [pscustomobject]@{
+                                FullName = $RegistryKey.Name
+                                Name = $RegistryKey.Name -replace '.*\\(.*)','$1'
+                                LastWriteTime = $LastWriteTime
+                            }
+                            $Object.pstypenames.insert(0,'Microsoft.Registry.Timestamp')
+                            $Object
+                        }
+                        122 {
+                            Throw "ERROR_INSUFFICIENT_BUFFER (0x7a)"
+                        }
+                        Default {
+                            Throw "Error $(Return) occurred"
+                        }
+                    }
+                }
+           }
+       }
+        $out | Sort-Object -Property 'LastWriteTime' -Descending
+    # END FUNC
+    }
+    Write-Output "[*] End of SIP and Trust Provider Hijacking Check"
+}

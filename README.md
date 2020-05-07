@@ -21,6 +21,7 @@ PS> Import-Module ./PersistenceHunter.ps1
 + Logon Scripts
 + Scheduled Tasks
 + Security Support Providers
++ SIP and Trust Provider Hijacking
 
 ## To-do 
 ##### Some of these won't be able to be done with PowerShell
@@ -47,7 +48,6 @@ PS> Import-Module ./PersistenceHunter.ps1
 + Server Software Component
 + Service Registry Permissions Weakness
 + Shortcut Modification
-+ SIP and Trust Provider Hijacking
 + System Firmware
 + Time Providers
 + Valid Accounts
