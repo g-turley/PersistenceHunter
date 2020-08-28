@@ -288,19 +288,7 @@ function Get-PersistenceTasks {
     }
   }
   
-  foreach ($s in $schTasks) {
-
-    $name = $s.Name.Trim()
-    $binary = $s.Binary.Trim()
-    $args = $s.Arguments.Trim()
-
-    if ($binary -ne "")
-    {   
-        Write-Output "  Task Name: $name"
-        Write-Output "    Execution String: $binary $args"
-        Write-Output ""
-    }
-  }
+  $schTasks | Where {$_.binary -ne ""} | Select name, binary, arguments | ft -autosize -wrap
   Write-Output "[*] End of scheduled tasks"
 }
 
