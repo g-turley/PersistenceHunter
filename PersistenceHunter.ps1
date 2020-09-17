@@ -326,7 +326,7 @@ function Get-SSPs {
                     }
 
                     else {
-                        Write-Output "    $dll is present in SSPs but not found in C:\Wiindows\System32\"
+                        Write-Output "    $dll is present in SSPs but not found in C:\Windows\System32\"
                     }
                 }
             }
