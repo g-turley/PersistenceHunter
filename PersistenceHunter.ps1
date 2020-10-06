@@ -550,27 +550,6 @@ function Get-ServicePersistence {
     Write-Output "[*] End of unsigned service DLL check"
 }
 
-function Get-Exes {
-
-    Write-Output "[*] Getting a list of all the EXEs, the path, and the MD5. Take 5, this will take a minute.."
-    Write-Output ""
-    
-    $exes = Get-ChildItem -Recurse -File -Path C:\ -Force -Include "*.exe" -ErrorAction SilentlyContinue | Select FullName,Name
-    foreach ($e in $exes)
-    {
-        $name = $e.Name
-        $fullpath = $e.FullName
-        $hash = (Get-FileHash -Algorithm MD5 -Path $fullpath).Hash
-
-        Write-Output "    File Name: $name"
-        Write-Output "        File Path: $fullpath"
-        Write-Output "        MD5: $hash"
-    }
-
-    Write-Output ""
-    Write-Output "[*] End of EXE check"
-}
-
 <#
 .Synopsis
   Provides sorted LastWriteTime of specific registry keys to help identify SIP and Trust Provider Hijacking
