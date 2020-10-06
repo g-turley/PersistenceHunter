@@ -21,6 +21,7 @@ PS> Import-Module ./PersistenceHunter.ps1
 + Logon Scripts
 + Scheduled Tasks
 + Security Support Providers
++ Services
 + SIP and Trust Provider Hijacking
 
 ## To-do 
@@ -37,7 +38,6 @@ PS> Import-Module ./PersistenceHunter.ps1
 + LSASS Driver
 + Modifying Existing Service
 + Netsh Helper DLL
-+ New Service
 + Office Application Startup
 + Path Interception
 + Port Monitors
